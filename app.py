@@ -1,54 +1,39 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
+import cv2
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, Input
+# Load OpenCV face detector
+face_cascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+)
 
-# 🔥 Recreate CNN model architecture (same as training)
-model = Sequential([
-    Input(shape=(128,128,3)),
-    Conv2D(32, (3,3), activation='relu'),
-    MaxPooling2D(2,2),
-    Conv2D(64, (3,3), activation='relu'),
-    MaxPooling2D(2,2),
-    Flatten(),
-    Dense(128, activation='relu'),
-    Dropout(0.5),
-    Dense(1, activation='sigmoid')
-])
+st.title("😷 Face Mask Detection App (Simple Version)")
+st.write("Upload an image to detect face (demo version without TensorFlow)")
 
-# ✅ Load weights (IMPORTANT: filename must match)
-model.load_weights("cnn_model.weights.h5")
+uploaded_file = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
 
-# ⚠️ Update labels based on your dataset
-labels = {0: "Without Mask", 1: "With Mask"}
+def detect_face(image):
+    img = np.array(image.convert("RGB"))
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-# 🎯 Streamlit UI
-st.title("😷 Face Mask Detection App")
-st.write("Upload an image to check if a person is wearing a mask")
+    faces = face_cascade.detectMultiScale(gray, 1.1, 5)
 
-# 📤 Upload image
-uploaded_file = st.file_uploader("Choose an image", type=["jpg", "png", "jpeg"])
+    for (x, y, w, h) in faces:
+        cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-# 🧠 Image preprocessing
-def preprocess(image):
-    image = image.resize((128, 128))
-    image = np.array(image) / 255.0
-    image = np.expand_dims(image, axis=0)
-    return image
+    return img, len(faces)
 
-# 🔍 Prediction
 if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
+    image = Image.open(uploaded_file)
 
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    img = preprocess(image)
+    result_img, face_count = detect_face(image)
 
-    prediction = model.predict(img)[0][0]
+    st.image(result_img, caption="Detected Faces", use_column_width=True)
 
-    result = labels[int(prediction > 0.5)]
-    confidence = prediction if prediction > 0.5 else 1 - prediction
-
-    st.subheader(f"Prediction: {result}")
+    if face_count > 0:
+        st.success(f"Faces detected: {face_count}")
+    else:
+        st.error("No face detected")
