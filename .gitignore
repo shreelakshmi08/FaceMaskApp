@@ -2,5 +2,6 @@ myenv/
 __pycache__/
 *.h5
 *.weights.h5
+!cnn_model.weights.h5   
 dataset/
 *.pyc
