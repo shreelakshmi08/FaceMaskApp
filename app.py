@@ -52,4 +52,3 @@ if uploaded_file is not None:
     confidence = prediction if prediction > 0.5 else 1 - prediction
 
     st.subheader(f"Prediction: {result}")
-    st.write(f"Confidence: {confidence*100:.2f}%")
